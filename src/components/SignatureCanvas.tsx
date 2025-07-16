@@ -4,121 +4,133 @@ interface SignatureCanvasProps {
   onSignatureChange?: (hasSignature: boolean) => void;
 }
 
-export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [hasSignature, setHasSignature] = useState(false);
+export interface SignatureCanvasRef {
+  clearCanvas: () => void;
+  saveAsPNG: () => void;
+  hasSignature: boolean;
+}
 
-  const resizeCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+export const SignatureCanvas = React.forwardRef<SignatureCanvasRef, SignatureCanvasProps>(
+  ({ onSignatureChange }, ref) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [hasSignature, setHasSignature] = useState(false);
 
-    const container = canvas.parentElement;
-    if (!container) return;
+    const resizeCanvas = useCallback(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    const containerWidth = container.clientWidth;
-    const newWidth = Math.min(containerWidth - 4, 600); // Account for border
-    const newHeight = Math.floor(newWidth * 0.42); // Maintain aspect ratio
+      const container = canvas.parentElement;
+      if (!container) return;
 
-    canvas.width = newWidth;
-    canvas.height = newHeight;
+      const containerWidth = container.clientWidth;
+      const newWidth = Math.min(containerWidth - 4, 600); // Account for border
+      const newHeight = Math.floor(newWidth * 0.42); // Maintain aspect ratio
 
-    // Redraw after resize
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.strokeStyle = '#111827';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-    }
-  }, []);
+      canvas.width = newWidth;
+      canvas.height = newHeight;
 
-  useEffect(() => {
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
-  }, [resizeCanvas]);
+      // Redraw after resize
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+    }, []);
 
-  const getEventPos = (e: React.MouseEvent | React.TouchEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
+    useEffect(() => {
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      return () => window.removeEventListener('resize', resizeCanvas);
+    }, [resizeCanvas]);
 
-    const rect = canvas.getBoundingClientRect();
-    
-    if ('touches' in e) {
-      const touch = e.touches[0] || e.changedTouches[0];
-      return {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top
-      };
-    } else {
-      return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      };
-    }
-  };
+    const getEventPos = (e: React.MouseEvent | React.TouchEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return { x: 0, y: 0 };
 
-  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+      const rect = canvas.getBoundingClientRect();
+      
+      if ('touches' in e) {
+        const touch = e.touches[0] || e.changedTouches[0];
+        return {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        };
+      } else {
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+    };
 
-    setIsDrawing(true);
-    const pos = getEventPos(e);
-    
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-  };
+    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+      e.preventDefault();
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!ctx) return;
 
-  const draw = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    if (!isDrawing) return;
+      setIsDrawing(true);
+      const pos = getEventPos(e);
+      
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    };
 
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    const draw = (e: React.MouseEvent | React.TouchEvent) => {
+      e.preventDefault();
+      if (!isDrawing) return;
 
-    const pos = getEventPos(e);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!ctx) return;
 
-    if (!hasSignature) {
-      setHasSignature(true);
-      onSignatureChange?.(true);
-    }
-  };
+      const pos = getEventPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
 
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
+      if (!hasSignature) {
+        setHasSignature(true);
+        onSignatureChange?.(true);
+      }
+    };
 
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    const stopDrawing = () => {
+      setIsDrawing(false);
+    };
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setHasSignature(false);
-    onSignatureChange?.(false);
-  };
+    const clearCanvas = useCallback(() => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!ctx || !canvas) return;
 
-  const saveAsPNG = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setHasSignature(false);
+      onSignatureChange?.(false);
+    }, [onSignatureChange]);
 
-    const link = document.createElement('a');
-    link.download = 'توقيع.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  };
+    const saveAsPNG = useCallback(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-  return {
-    canvas: (
+      const link = document.createElement('a');
+      link.download = 'توقيع.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }, []);
+
+    React.useImperativeHandle(ref, () => ({
+      clearCanvas,
+      saveAsPNG,
+      hasSignature
+    }), [clearCanvas, saveAsPNG, hasSignature]);
+
+    return (
       <canvas
         ref={canvasRef}
-        className="signature-canvas bg-white canvas-3d"
+        className="signature-canvas bg-white canvas-3d w-full"
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}
@@ -128,9 +140,8 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureCha
         onTouchEnd={stopDrawing}
         style={{ touchAction: 'none' }}
       />
-    ),
-    clearCanvas,
-    saveAsPNG,
-    hasSignature
-  };
-};
+    );
+  }
+);
+
+SignatureCanvas.displayName = 'SignatureCanvas';

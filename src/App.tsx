@@ -1,29 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { SignatureCanvas } from './components/SignatureCanvas';
-import { Button } from './components/ui/button';
 import { Download, Eraser } from 'lucide-react';
+
+interface SignatureCanvasRef {
+  clearCanvas: () => void;
+  saveAsPNG: () => void;
+  hasSignature: boolean;
+}
 
 function App() {
   const [hasSignature, setHasSignature] = useState(false);
-  const [signatureCanvas, setSignatureCanvas] = useState<{
-    clearCanvas: () => void;
-    saveAsPNG: () => void;
-    hasSignature: boolean;
-  } | null>(null);
+  const signatureRef = useRef<SignatureCanvasRef>(null);
 
+  const handleClearCanvas = () => {
+    signatureRef.current?.clearCanvas();
+  };
 
-
-  const CanvasComponent = SignatureCanvas({
-    onSignatureChange: setHasSignature
-  });
-
-  React.useEffect(() => {
-    setSignatureCanvas({
-      clearCanvas: CanvasComponent.clearCanvas,
-      saveAsPNG: CanvasComponent.saveAsPNG,
-      hasSignature: CanvasComponent.hasSignature
-    });
-  }, [CanvasComponent]);
+  const handleSaveAsPNG = () => {
+    signatureRef.current?.saveAsPNG();
+  };
 
   return (
     <div className="min-h-screen bg-3d-gradient" dir="rtl">
@@ -64,14 +59,17 @@ function App() {
               
               <div className="flex justify-center mb-8">
                 <div className="w-full max-w-2xl">
-                  {CanvasComponent.canvas}
+                  <SignatureCanvas
+                    ref={signatureRef}
+                    onSignatureChange={setHasSignature}
+                  />
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-6 justify-center">
                 <button
-                  onClick={signatureCanvas?.clearCanvas}
+                  onClick={handleClearCanvas}
                   className="btn-3d btn-3d-secondary flex items-center gap-3 px-8 py-4 text-lg font-bold"
                 >
                   <Eraser className="w-6 h-6" />
@@ -79,7 +77,7 @@ function App() {
                 </button>
 
                 <button
-                  onClick={signatureCanvas?.saveAsPNG}
+                  onClick={handleSaveAsPNG}
                   disabled={!hasSignature}
                   className={`btn-3d flex items-center gap-3 px-8 py-4 text-lg font-bold ${
                     !hasSignature ? 'opacity-50 cursor-not-allowed' : ''
