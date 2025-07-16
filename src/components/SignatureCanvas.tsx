@@ -118,7 +118,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureCha
     canvas: (
       <canvas
         ref={canvasRef}
-        className="signature-canvas bg-white border-2 border-dashed border-primary rounded-lg"
+        className="signature-canvas bg-white canvas-3d"
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}
